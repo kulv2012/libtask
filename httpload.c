@@ -41,8 +41,8 @@ void fetchtask(void *v) {
 			continue;
 		}
 		snprintf(buf, sizeof buf, "GET %s HTTP/1.0\r\nHost: %s\r\n\r\n", url, server);
-		fdwrite(fd, buf, strlen(buf));
-		while((n = fdread(fd, buf, sizeof buf)) > 0){
+		fdwrite(fd, buf, strlen(buf));//异步数据读写，这里可能会造成协程切换，因为一定有阻塞操作
+		while((n = fdread(fd, buf, sizeof buf)) > 0){///异步读取
 			//buf[n] = '\0';
 			//printf("buf:%s", buf);
 		}
@@ -50,3 +50,4 @@ void fetchtask(void *v) {
 		write(1, ".", 1);
 	}
 }
+

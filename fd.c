@@ -116,7 +116,7 @@ taskdelay(uint ms)
 
 void
 fdwait(int fd, int rw)
-{
+{//按需启动fdtask这个异步I/O控制协程，将当前FD加入到poll数组中。进行协程切换。
 	int bits;
 
 	if(!startedfdtask){
@@ -147,7 +147,14 @@ fdwait(int fd, int rw)
 	pollfd[npollfd].events = bits;
 	pollfd[npollfd].revents = 0;
 	npollfd++;
-	taskswitch();
+	taskswitch();//注意这里并没有修改这个协程的运行状态，这样他下次还可能跑起来
+	/*
+	 不过这里多唤醒一次，当前协程也就是再次尝试I/O，基本还是会EAGAIN， 然后又调用fdwait，又睡下去。这样不会有bug，但会浪费CPU？
+
+PS: 后来想了想，这个会的，因为当前协程在taskscheduler里面调度它运行的时候，使用了deltask(&taskrunqueue, t);//从待调度链表中移出来，调度它运行，因此现在我要再fdwait里面直接调用taskswitch();，那么当前这个协程是不会被加到taskrunqueue链表里面，也就没有机会得到执行。
+
+那么什么时候得到执行呢？答案是：只有当有人主动将其加到taskrunqueue里面，才能执行，这个人就是fdtask I/O监听协程，这是唯一的机会。所以写代码的时候，如果要切换协程，一定得想清楚这一点，别知道怎么切换出去了，不知道什么时候该切换回来就悲剧了。
+	 */
 }
 
 /* Like fdread but always calls fdwait before reading. */

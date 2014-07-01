@@ -244,7 +244,7 @@ taskscheduler(void)
 		taskdebug("run %d (%s)", t->id, t->name);
 		contextswitch(&taskschedcontext, &t->context);//真正进行上下文切换，这样就切换到了其他协程运行，比如taskmainstart
 //print("back in scheduler\n");
-		taskrunning = nil;
+		taskrunning = nil;//把刚刚被切换的协程的指向改为空。
 		if(t->exiting){
 			if(!t->system)
 				taskcount--;
